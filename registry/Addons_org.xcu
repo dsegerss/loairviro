@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<oor:component-data xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" oor:name="Addons" oor:package="org.openoffice.Office">
+  <node oor:name="AddonUI">
+    <node oor:name="AddonMenu">
+      <node oor:name="se.smhi.airviro.loairviro" oor:op="replace">
+        <prop oor:name="Context" oor:type="xs:string">
+          <value>com.sun.star.sheet.SpreadsheetDocument</value>
+        </prop>
+        <prop oor:name="Title" oor:type="xs:string">
+          <value xml:lang="en">Airviro</value>
+        </prop>
+        <prop oor:name="URL" oor:type="xs:string">
+          <value/>
+        </prop>
+        <prop oor:name="Target" oor:type="xs:string">
+          <value>_self</value>
+        </prop>
+        <node oor:name="Submenu">
+          <node oor:name="menu01" oor:op="replace">
+            <prop oor:name="Context" oor:type="xs:string">
+              <value>com.sun.star.sheet.SpreadsheetDocument</value>
+            </prop>
+            <prop oor:name="Title" oor:type="xs:string">
+              <value xml:lang="en">Formatting ...</value>
+              <value xml:lang="fr">Formatage ...</value>
+              <value xml:lang="de">Formatierung ...</value>
+            </prop>
+            <prop oor:name="URL" oor:type="xs:string">
+              <value>service:se.smhi.airviro.loairviro.TestButton?trigger</value>
+              <value>_self</value>
+            </prop>
+            <prop oor:name="ImageIdentifier" oor:type="xs:string">
+              <value/>
+            </prop>
+          </node>
+          <node oor:name="menu02" oor:op="replace">
+            <prop oor:name="Context" oor:type="xs:string">
+              <value>com.sun.star.sheet.SpreadsheetDocument</value>
+            </prop>
+            <prop oor:name="Title" oor:type="xs:string">
+              <value xml:lang="en">Contents...</value>
+              <value xml:lang="fr">Contenu...</value>
+              <value xml:lang="de">Inhalte...</value>
+            </prop>
+            <prop oor:name="URL" oor:type="xs:string">
+              <value>service:se.smhi.airviro.loairviro.TestButton?trigger</value>
+            </prop>
+            <prop oor:name="Target" oor:type="xs:string">
+              <value>_self</value>
+            </prop>
+            <prop oor:name="ImageIdentifier" oor:type="xs:string">
+              <value/>
+            </prop>
+          </node>
+        </node>
+      </node>
+    </node>
+    <node oor:name="OfficeToolBar">
+      <node oor:name="se.smhi.airviro.loairviro" oor:op="replace">
+        <node oor:name="btn01" oor:op="replace">
+          <prop oor:name="Context" oor:type="xs:string">
+            <value>com.sun.star.sheet.SpreadsheetDocument</value>
+          </prop>
+          <prop oor:name="Title" oor:type="xs:string">
+            <value xml:lang="en">Format</value>
+            <value xml:lang="fr">Formatage</value>
+            <value xml:lang="de">Formate</value>
+          </prop>
+          <prop oor:name="URL" oor:type="xs:string">
+            <value>service:se.smhi.airviro.loairviro.TestButton?trigger</value>
+          </prop>
+          <prop oor:name="Target" oor:type="xs:string">
+            <value>_self</value>
+          </prop>
+          <prop oor:name="ImageIdentifier" oor:type="xs:string">
+            <value/>
+          </prop>
+        </node>
+        <node oor:name="btn02" oor:op="replace">
+          <prop oor:name="Context" oor:type="xs:string">
+            <value>com.sun.star.sheet.SpreadsheetDocument</value>
+          </prop>
+          <prop oor:name="Title" oor:type="xs:string">
+            <value xml:lang="en">Contents</value>
+            <value xml:lang="fr">Contenu</value>
+            <value xml:lang="de">Inhalte</value>
+          </prop>
+          <prop oor:name="URL" oor:type="xs:string">
+            <value>service:se.smhi.airviro.loairviro.TestButton?trigger</value>
+          </prop>
+          <prop oor:name="Target" oor:type="xs:string">
+            <value>_self</value>
+          </prop>
+          <prop oor:name="ImageIdentifier" oor:type="xs:string">
+            <value/>
+          </prop>
+        </node>
+      </node>
+    </node>
+    <node oor:name="OfficeHelp">
+      <node oor:name="se.smhi.airviro.loairviro" oor:op="replace">
+        <prop oor:name="Context" oor:type="xs:string">
+          <value>com.sun.star.sheet.SpreadsheetDocument</value>
+        </prop>
+        <prop oor:name="URL" oor:type="xs:string">
+            <value>service:se.smhi.airviro.loairviro.TestButton?#_TOP</value>
+        </prop>
+        <prop oor:name="Title" oor:type="xs:string">
+          <value xml:lang="en">SpecialCells Reference Manual</value>
+          <value xml:lang="de">SpecialCells Anleitung</value>
+        </prop>
+        <prop oor:name="Target" oor:type="xs:string">
+          <value>_top</value>
+        </prop>
+      </node>
+    </node>
+  </node>
+</oor:component-data>
