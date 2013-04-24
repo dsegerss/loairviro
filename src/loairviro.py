@@ -1,7 +1,10 @@
 # -*- coding: iso-8859-15 -*-
 import uno
 import unohelper
+import urllib2
+from time import sleep
 from com.sun.star.task import XJobExecutor
+from com.sun.star.awt import XTopWindowListener
 import pdb
 
 from pyAirviro.edb.edb import Edb
@@ -10,6 +13,30 @@ from pyAirviro.edb.sourcedb import ActivityEmis
 from pyAirviro.edb.subdb import Subdb
 from pyAirviro.edb.subgrpdb import Subgrpdb
 from pyAirviro.edb.emfacdb import Emfacdb
+
+
+def addControl(controlType, dlgModel, x, y, width, height, label, name = None):
+    control = dlgModel.createInstance(controlType)
+    control.PositionX = x
+    control.PositionY = y
+    control.Width = width
+    control.Height = height
+    if controlType == 'com.sun.star.awt.UnoControlFixedTextModel':
+        control.Label = label
+    elif controlType == 'com.sun.star.awt.UnoControlEditModel':
+        control.Text = label
+    elif controlType == 'com.sun.star.awt.UnoControlProgressBarModel':
+        control.ProgressValue = label
+
+    if name:
+        control.Name = name
+        dlgModel.insertByName(name, control)
+    else:
+        control.Name = 'unnamed'
+        dlgModel.insertByName('unnamed', control)
+
+    return control
+
 
 class LoadEdb(XJobExecutor,unohelper.Base):
     """
@@ -25,16 +52,42 @@ class LoadEdb(XJobExecutor,unohelper.Base):
         self.edb=None
         self.subdb=None
         self.subgrpdb=None
+        self.host=None
+        self.auth=None
+        self.user=None
+        self.edb=None
+        self.domain=None
+
+    def login(self,host,domain,user,pw):
+        if "http://" not in host:
+            host="http://"+host
+                    
+        #todo: get authenticator via https        
+        self.auth ="gmX=QxTLA3Cz3=9aacZk0k9Zae_FW8Kznq+9B_7_i3i0"
+        self.domain=domain
+        self.user=user
+        self.host=host
 
     def setEdb(self,domainName,userName,edbName):
         self.edb=Edb(domainName,userName,edbName)
 
+    def getPage(self,argList):
+        req = "%s/cgi-bin/iairviro/do.cgi?%s&loAirviro.cgi&%s"%(self.host,
+                                                                self.auth,
+                                                                "&".join(argList))
+        page = urllib2.urlopen(req)
+        return page
+        
     def loadSubdb(self):
         self.sheets["substances"] = self.createSheet("substances")
         self.subdb=Subdb(self.edb)
-        self.subdb.readSubstances(
-            filename="/local_disk/dvlp/airviro/loairviro/test/substances.out",
-            keepEmpty=True)        
+        page=self.getPage(["read",self.domain,self.edb.user,self.edb.name,
+                           "subdb_0"])
+        
+#        self.subdb.readSubstances(
+#            filename="/local_disk/dvlp/airviro/loairviro/test/substances.out",
+#            keepEmpty=True)
+        self.subdb.readSubstances(fileObject=page,keepEmpty=True)
         out=(("Index","Substance name"),)
         indices=sorted(self.subdb.substNames.keys())
         for i,ind in enumerate(indices):
@@ -47,9 +100,11 @@ class LoadEdb(XJobExecutor,unohelper.Base):
 
     def loadSubgrpdb(self):
         self.sheets["substance groups"] = self.createSheet("substance groups")
-        self.subgrpdb=Subgrpdb(self.edb)
-        self.subgrpdb.read(
-            filename="/local_disk/dvlp/airviro/loairviro/test/subgrp.out")
+        self.subgrpdb=Subgrpdb(self.edb)      
+        page=self.getPage(["read",self.domain,self.edb.user,self.edb.name,
+                           "subgrpdb"])
+        self.subgrpdb.read(fileObject=page)
+#            filename="/local_disk/dvlp/airviro/loairviro/test/subgrp.out")
         
         substances=[]
         for subgrpInd,subgrp in self.subgrpdb.subgrps.items():
@@ -90,9 +145,10 @@ class LoadEdb(XJobExecutor,unohelper.Base):
     def loadEmfacdb(self):
         self.sheets["emission factors"] = self.createSheet("emission factors")
         self.emfacdb=Emfacdb(self.edb)
-        self.emfacdb.readAscii(
-            filename="/local_disk/dvlp/airviro/loairviro/test/emfac.out")
-        pdb.set_trace()
+        page=self.getPage(["read",self.domain,self.edb.user,self.edb.name,
+                           "emfacdb"])
+        self.emfacdb.read(fileObject=page)
+#            filename="/local_disk/dvlp/airviro/loairviro/test/emfac.out")
         nvars=[len(emfac.vars) for emfac in self.emfacdb.activities.values()]
         nvars=max(nvars)
 
@@ -151,10 +207,11 @@ class LoadEdb(XJobExecutor,unohelper.Base):
     def loadSources(self):        
         self.sheets["sources"] = self.createSheet("sources")
         sourcedb=Sourcedb(self.edb)
-        #Read one source at a time
-        sourcedb._batch=1
-        filename="/local_disk/dvlp/airviro/loairviro/test/TR_ships.out"
 
+        page=self.getPage(["read",self.domain,self.edb.user,self.edb.name,
+                           "sourcedb"])
+        #filename="/local_disk/dvlp/airviro/loairviro/test/TR_ships.out"
+        
         substEmis={}
         substAlob={}
         subgrpEmis={}
@@ -165,9 +222,14 @@ class LoadEdb(XJobExecutor,unohelper.Base):
 
         #Reading sources
         batchInd=0
-        while sourcedb.readBatch(filename=filename,accumulate=True):
-            print "Read batch %i" %batchInd
+        while sourcedb.read(fileObject=page,accumulate=True,batchSize=1):
+            self.updateProgressDlg(
+                "Loading point and area sources","read batch %i" %batchInd)
+            #print "Read batch %i" %batchInd
             batchInd+=1
+
+        self.updateProgressDlg(
+            "Loading point and area sources","writing sources to sheet")
         #To present sources in a table with a nice header, it is necessary
         #to list all substances, alobs, subgroups, emfacs and variables that are
         #used in the edb. This is because each alob, substance etc. should be
@@ -346,17 +408,57 @@ class LoadEdb(XJobExecutor,unohelper.Base):
         
     def trigger(self,args=''):
         """Called by addon's UI controls or service:URL"""
-        self.setEdb("shipair","airviro","TR_2011_v3")
-        print "EDB set"
+        self.createProgressDlg()
+        self.setEdb("shipair","sjov","BS_2011_e1")
+        self.updateProgressDlg("Loading edb: authenticating","")
+        self.login("www.shipair.smhi.se","shipair","airviro","dummypw")
+        self.updateProgressDlg("Loading substance list and searchkeys","")
         self.loadSubdb()
         print "Loaded subdb"
+        self.updateProgressDlg("Loading substance groups","")
         self.loadSubgrpdb()
         print "Loaded subgrpdb"
+        self.updateProgressDlg("Loading emission factors","")
         self.loadEmfacdb()
         print "Loaded emfacdb"
+        self.updateProgressDlg("Loading point and area sources","")
         self.loadSources()
+        self.updateProgressDlg("Edb loaded successfully!","")
+        sleep(1)
         print "Loaded sources"
+        self.progressContainer.dispose()
         
+    def createProgressDlg(self):
+        parentwin=self.doc.CurrentController.Frame.ContainerWindow
+        dialogModel = self.ctx.ServiceManager.createInstanceWithContext(
+            'com.sun.star.awt.UnoControlDialogModel', self.ctx)
+        FramePosSize = self.doc.CurrentController.Frame.ContainerWindow.PosSize
+        WindowWidth = FramePosSize.Width
+        dialogModel.Width = 200
+        dialogModel.Height = 100
+        dialogModel.PositionX = (WindowWidth/2.2) - 105
+        dialogModel.PositionY = 30
+        dialogModel.Title = 'Loading sources'
+
+        statusTxtModel = addControl('com.sun.star.awt.UnoControlFixedTextModel',
+                               dialogModel, 6, 2, 190, 20, 'Initializing',
+                               'statusLabel')
+
+        counterTxtModel = addControl('com.sun.star.awt.UnoControlFixedTextModel',
+                             dialogModel, 6, 30, 190, 50, '0',
+                             'counterLabel')
+        
+        self.progressContainer = self.ctx.ServiceManager.createInstanceWithContext('com.sun.star.awt.UnoControlDialog', self.ctx)
+        
+        self.progressContainer.setModel(dialogModel)
+        self.progressContainer.setVisible(True)
+
+        self.statusControl = self.progressContainer.getControl('statusLabel').getModel()
+        self.counterControl = self.progressContainer.getControl('counterLabel').getModel()
+
+    def updateProgressDlg(self,statusStr,counterStr):
+        self.statusControl.Label=statusStr
+        self.counterControl.Label=counterStr
 
 
 ## addon-implementation:
